@@ -1,6 +1,6 @@
 # clues-compiler
 
-Optimizing compiler for clues modules
+[Optimizing compiler](https://en.wikipedia.org/wiki/Optimizing_compiler) for clues modules
 
 Pre-processes function arguments for faster execution time
 
