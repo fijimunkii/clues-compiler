@@ -1,0 +1,31 @@
+{
+  "name": "clues-compiler",
+  "version": "1.0.0",
+  "description": "Optimizing compiler for clues modules",
+  "main": "index.js",
+  "dependencies": {
+    "require-shim": "^0.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fijimunkii/clues-compiler.git"
+  },
+  "keywords": [
+    "source",
+    "instrumentation",
+    "clues",
+    "compile",
+    "optimize",
+    "shim"
+  ],
+  "author": "Harrison Powers",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fijimunkii/clues-compiler/issues"
+  },
+  "homepage": "https://github.com/fijimunkii/clues-compiler#readme"
+}
