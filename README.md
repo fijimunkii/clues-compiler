@@ -17,7 +17,7 @@ What it does:
 // takes this
 class Foo {
   bar(a) {
-		var ff = Math.sqrt(100)  + Math.random();
+		const ff = Math.sqrt(100) + Math.random();
 		return (b,c) => a+b+c+ff;
   }
   a() { return 5; }
@@ -32,7 +32,7 @@ function WRAPFN(args, fn) {
 const ARGS_1 = ['b','c'];
 class Foo {
   bar(a) {
-		var ff = Math.sqrt(100)  + Math.random();
+		const ff = Math.sqrt(100) + Math.random();
     return WRAPFN(ARGS_1, (b,c) => {
       return a + b + c + ff;
     });
