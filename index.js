@@ -17,10 +17,10 @@ function optimize(rawData) {
   let wrapIndex = 0;
   let argsDefs = [];
 
-	// regular functions
+  // regular functions
   function regularFunctions(d) {
     const reFn = createReFn();
-		for (let matches = reFn.exec(d); matches; matches = reFn.exec(d)) {
+    for (let matches = reFn.exec(d); matches; matches = reFn.exec(d)) {
       // This is necessary to avoid infinite loops with zero-width matches
       // TODO is this necessary? creating the new regex objects?
       if (matches.index === reFn.lastIndex) {
@@ -38,7 +38,7 @@ function optimize(rawData) {
         // check for nested fn
         const nestedReFn = createReFn();
         const substr = match.substring(1);
-		    for (let nestedMatches = nestedReFn.exec(substr); nestedMatches; nestedMatches = nestedReFn.exec(substr)) {
+        for (let nestedMatches = nestedReFn.exec(substr); nestedMatches; nestedMatches = nestedReFn.exec(substr)) {
           if (nestedMatches.index === nestedReFn.lastIndex) {
             nestedReFn.lastIndex++;
           }
@@ -50,7 +50,7 @@ function optimize(rawData) {
       });
     }
     return d;
-	}
+  }
   processed = regularFunctions(rawData);
 
   // TODO arrow functions
