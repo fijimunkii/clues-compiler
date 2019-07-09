@@ -157,7 +157,8 @@ module.exports = t => {
     const d = require(pkg);
     t.same(d.a.private, true);
     t.same(d.b.private, true);
-    t.same(d.c.prep, undefined);
+    t.same(d.c.private, true);
+    t.same(d.d.private, undefined);
   });
 
   t.test('prep', async t => {
