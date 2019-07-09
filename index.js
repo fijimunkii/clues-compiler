@@ -1,73 +1,61 @@
+// https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md
+// type schema: https://babeljs.io/docs/en/babel-types
 const shimRequire = require('shim-require');
+const t = require('@babel/types');
+const { parse } = require('@babel/parser');
+const traverse = require('babel-traverse').default; // @babel/traverse had some funky errors
+const generate = require('babel-generator').default;
+const WRAPFN = `function WRAPFN(args, fn) { fn.__args__ = args; return fn; }`;
 
-// apply clues pre-processing
-// https://regex101.com/r/zD3nE9/1
-const createReFn = () => /function\s*([A-z0-9]+)?\s*\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)\s*\{(?:[^}{]+|\{(?:[^}{]+|\{[^}{]*\})*\})*\}/g;
-const createReFnArgs = () => /^\s*function.*?\(([^)]*?)\).*/;
-const reEs6 =  /^\s*\({0,1}([^)]*?)\){0,1}\s*=>/;
-const reEs6Class = /^\s*[a-zA-Z0-9\-$_]+\s*\((.*?)\)\s*{/;
-const WRAPFN = `function WRAPFN(args, fn) {
-  fn.__args__ = args;
-  return fn;
-}`;
+const wrapFn = (path, wrapRef) => {
+  // do not wrap class methods
+  if (path.type === 'ClassMethod') {
+    return;
+  }
+  // prepended WRAPFN is the first function to get processed
+  if (!wrapRef.path) {
+    wrapRef.path = path;
+    wrapRef.callId = path.node.id;
+    return;
+  }
+  if (path.node.wrapped) {
+    return;
+  }
+  wrapRef.index++;
+  const args = t.variableDeclaration(
+    'const', [
+      t.variableDeclarator(
+        t.identifier(`ARGS_${wrapRef.index}`),
+        t.arrayExpression(path.node.params.map(d => t.stringLiteral(d.name)))
+      )
+    ]
+  );
+  wrapRef.path.insertAfter(args);
+  const argsId = args.declarations[0].id;
+  path.node.wrapped = true;
+  path.replaceWith(
+    t.callExpression(wrapRef.callId, [argsId, path.node])
+  );
+  // Regardless of whether or not the wrapped function is a an async method
+  // or generator the outer function should not be
+  path.node.async = false;
+  path.node.generator = false;
+};
 
-function optimize(rawData) {
-  // walk through function and optimize
-  let processed;
-  let wrapIndex = 0;
-  let argsDefs = [];
-
-  // regular functions
-  function regularFunctions(d) {
-    const reFn = createReFn();
-    for (let matches = reFn.exec(d); matches; matches = reFn.exec(d)) {
-      // This is necessary to avoid infinite loops with zero-width matches
-      // TODO is this necessary? creating the new regex objects?
-      if (matches.index === reFn.lastIndex) {
-        reFn.lastIndex++;
-      }
-      matches.filter(d => d).forEach(match => {
-        wrapIndex++;
-        // wrap fn
-        const optimized = `WRAPFN(ARGS_${wrapIndex}, ${match})`;
-        d = d.replace(match, optimized);
-        // collect arguments
-        const reFnArgs = createReFnArgs();
-        const args = reFnArgs.exec(match);
-        argsDefs.push(`const ARGS_${wrapIndex} = [${args[1].split(/\,(?:\s)?/).map(d => '"'+d+'"')}];`);
-        // check for nested fn
-        const nestedReFn = createReFn();
-        const substr = match.substring(1);
-        for (let nestedMatches = nestedReFn.exec(substr); nestedMatches; nestedMatches = nestedReFn.exec(substr)) {
-          if (nestedMatches.index === nestedReFn.lastIndex) {
-            nestedReFn.lastIndex++;
-          }
-          nestedMatches.filter(d => d).forEach(nestedMatch => {
-            d = d.replace(nestedMatch, regularFunctions(nestedMatch));
-          });
-        }
-        // TODO check for nested other fn types
-      });
+const process = (d,filename) => {
+  d = `${WRAPFN}${d}`;
+  const ast = parse(d, { sourceType: 'unambiguous' });
+  const wrapRef = { index: 0 };
+  traverse(ast, {
+    Function: {
+      enter: path => wrapFn(path, wrapRef)
     }
-    return d;
-  }
-  processed = regularFunctions(rawData);
+  });
+  const { code } = generate(ast, {
+    retainFunctionParens: true
+  }, d);
+  //console.log(`${filename}\n${code}`);
+  return code;
+};
 
-  // TODO arrow functions
-  // TODO class functions
-
-  // prepend wrapfn if any functions are wrapped
-  if (wrapIndex) {
-    processed = `${WRAPFN}
-      ${argsDefs.join("\n")}
-      ${processed}`;
-  }
-
-  //console.log(`\n\n\n>>>>>>>>>>>>>>>>>>>>>\noptimized output:\n${processed}\n<<<<<<<<<<<<<<<<<<<<<<<<\n\n\n`);
-  return processed;
-}
-
-shimRequire(function(content, filename, module) {
-  const optimized = optimize(content);
-  return optimized;
-});
+shimRequire((content,filename) => process(content,filename));
