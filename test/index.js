@@ -142,7 +142,43 @@ module.exports = t => {
       t.same((new d()).test()().__args__, ['thisIsThingA2', 'thisIsThingB2']);
     });
   });
-  
+
+  t.test('private', async t => {
+    const pkg = await mkpkg('private-fn.js', `
+      module.exports = {
+        a: function($private) {
+          return 'foo';
+        },
+        b: ($private) => 'foo',
+        c: $private => 'foo',
+        d: () => 'foo'
+      };
+    `);
+    const d = require(pkg);
+    t.same(d.a.private, true);
+    t.same(d.b.private, true);
+    t.same(d.c.prep, undefined);
+  });
+
+  t.test('prep', async t => {
+    const pkg = await mkpkg('prep-fn.js', `
+      module.exports = {
+        a: function($prep) {
+          return 'foo';
+        },
+        b: ($prep) => 'foo',
+        c: $prep => 'foo',
+        d: () => 'foo'
+      };
+    `);
+    const d = require(pkg);
+    t.same(d.a.prep, true);
+    t.same(d.b.prep, true);
+    t.same(d.c.prep, true);
+    t.same(d.d.prep, undefined);
+  });
+ 
+
 };
 
 if (!module.parent) module.exports(require('tap'));
