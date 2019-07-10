@@ -7,12 +7,19 @@ Applies various clues optimizations to functions
 - Pre-processes function arguments for faster execution time
 - Check for `$private` and `$prep`
 
-Once loaded into your project, all subsequent `require`s will be optimized
+Once loaded, subsequent `require`s that are in a subdirecty will be optimized.
+Defaults to restricting from the directory of the parent module, otherwise
+uses the current directory. Optionally pass in a directory to restrict
 
 How to use:
 ```js
 // just add this to the top of your index module
-require('clues-compiler');
+require('clues-compiler')();
+```
+
+To process all node_modules, pass in with `node -r`
+```js
+node -r clues-compiler index.js
 ```
 
 What it does:
@@ -44,7 +51,3 @@ class Foo {
   b() { return 6; }
 }
 ```
-
-Related:
-https://nodejs.org/api/modules.html#modules_the_module_object_1
-https://github.com/nodejs/node/blob/master/lib/internal/modules/cjs/loader.js
