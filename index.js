@@ -5,6 +5,9 @@ const t = require('@babel/types');
 const { parse } = require('@babel/parser');
 const traverse = require('babel-traverse').default; // @babel/traverse had some funky errors
 const generate = require('babel-generator').default;
+// various clues optimizations
+// pre-process args
+// check for private and prep
 const WRAPFN = `function WRAPFN(args, private, prep, fn) {
   fn.__args__ = args;
   if (private) { fn.private = true; }
@@ -13,23 +16,24 @@ const WRAPFN = `function WRAPFN(args, private, prep, fn) {
 }`;
 
 const wrapFn = (path, wrapRef) => {
+  // store reference to prepended WRAPFN
+  if (!wrapRef.path) {
+    wrapRef.path = path;
+    return;
+  }
   // do not wrap class methods
   if (path.type === 'ClassMethod') {
     return;
   }
-  // prepended WRAPFN is the first function to get processed
-  if (!wrapRef.path) {
-    wrapRef.path = path;
-    wrapRef.callId = path.node.id;
-    return;
-  }
+  // check if already wrapped
   if (path.node.wrapped) {
     return;
   }
+  path.node.wrapped = true;
+
+  // inject ARGS variable
   wrapRef.index++;
   const argNames = path.node.params.map(d => d.name);
-  const isPrivate = t.booleanLiteral(argNames.includes('$private'));
-  const isPrep = t.booleanLiteral(argNames.includes('$prep'));
   const args = t.variableDeclaration(
     'const', [
       t.variableDeclarator(
@@ -39,13 +43,14 @@ const wrapFn = (path, wrapRef) => {
     ]
   );
   wrapRef.path.insertAfter(args);
+
+  // replace with WRAPFN call
   const argsId = args.declarations[0].id;
-  path.node.wrapped = true;
+  const isPrivate = t.booleanLiteral(argNames.includes('$private'));
+  const isPrep = t.booleanLiteral(argNames.includes('$prep'));
   path.replaceWith(
-    t.callExpression(wrapRef.callId, [argsId, isPrivate, isPrep, path.node])
+    t.callExpression(wrapRef.path.node.id, [argsId, isPrivate, isPrep, path.node])
   );
-  // Regardless of whether or not the wrapped function is a an async method
-  // or generator the outer function should not be
   path.node.async = false;
   path.node.generator = false;
 };
