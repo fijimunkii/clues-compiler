@@ -5,6 +5,11 @@ const t = require('@babel/types');
 const { parse } = require('@babel/parser');
 const traverse = require('babel-traverse').default; // @babel/traverse had some funky errors
 const generate = require('babel-generator').default;
+const path = require('path');
+const inPath = (parentPathname, pathname) => {
+  const relative = path.relative(parentPathname, pathname);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+};
 // various clues optimizations
 // pre-process args
 // check for private and prep
@@ -71,4 +76,12 @@ const process = (d,filename) => {
   return code;
 };
 
-shimRequire((content,filename) => process(content,filename));
+module.exports = dirname => shimRequire((content,filename) => {
+  // optionally restrict to a specified directory
+  // default to parent directory if required, otherwise the current directory
+  const pathToRestrict = dirname || (module.parent && module.parent.filename) || __dirname;
+  if (inPath(path.dirname(pathToRestrict), filename)) {
+    content = process(content, filename);
+  }
+  return content;
+});
