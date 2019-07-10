@@ -77,8 +77,9 @@ const process = (d,filename) => {
 };
 
 module.exports = dirname => shimRequire((content,filename) => {
-  // optionally restrict to a specified directory
-  // default to parent directory if required, otherwise the current directory
+  // default to restricting from directory of parent module
+  // otherwise use the current directory
+  // optionally pass in a directory
   const pathToRestrict = dirname || (module.parent && module.parent.filename) || __dirname;
   if (inPath(path.dirname(pathToRestrict), filename)) {
     content = process(content, filename);

@@ -10,7 +10,7 @@ const mkpkg = async (pkgname, content) => {
 module.exports = t => {
 
   // load clues compiler
-  require('../index');
+  require('../index')();
 
   t.test('regular function', { autoend: true }, t => {
 

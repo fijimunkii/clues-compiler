@@ -21,6 +21,10 @@ To process all node_modules, pass in with `node -r`
 ```js
 node -r clues-compiler index.js
 ```
+or specify the directory
+```js
+require('clues-compiler')(path.join(__dirname,'node_modules'));
+```
 
 What it does:
 ```js
