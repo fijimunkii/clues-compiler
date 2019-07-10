@@ -38,9 +38,7 @@ const ARGS_1 = ['b','c'];
 class Foo {
   bar(a) {
     const ff = Math.sqrt(100) + Math.random();
-    return WRAPFN(ARGS_1, false, false, (b,c) => {
-      return a + b + c + ff;
-    });
+    return WRAPFN(ARGS_1, false, false, (b,c) => a+b+c+ff);
   }
   a() { return 5; }
   b() { return 6; }
