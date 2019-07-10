@@ -76,13 +76,20 @@ const process = (d,filename) => {
   return code;
 };
 
-module.exports = dirname => shimRequire((content,filename) => {
-  // default to restricting from directory of parent module
+module.exports = options => shimRequire((content,filename) => {
+  // default to optimize from directory of parent module
   // otherwise use the current directory
   // optionally pass in a directory
-  const pathToRestrict = dirname || (module.parent && module.parent.filename) || __dirname;
-  if (inPath(path.dirname(pathToRestrict), filename)) {
+  const dirname = (options && options.dirname) || (module.parent && module.parent.filename) || __dirname;
+  const inDir = inPath(path.dirname(dirname), filename);
+  // optionally pass in paths to restrict
+  const pathsToRestrict = options && options.restrict || [];
+  const isRestricted = pathsToRestrict.some(path => inPath(path, filename));
+
+  if (!isRestricted && inDir) {
     content = process(content, filename);
   }
   return content;
 });
+
+if (!module.parent) module.exports();
